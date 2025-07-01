@@ -23,13 +23,13 @@ class AudioProcessor:
             file.write("]")
         print(f"Saved timeline data to {output_path}")
 
-    def is_fully_silent(self, min_silence_len=100, threshold=-30):
+    def is_fully_silent(self, min_silence_len=5000, threshold=-30):
         # Detect non-silent parts
         non_silent_segments = self.split_audio_by_silence(min_silence_len, threshold)
         # If the list of non-silent segments is empty, the audio is fully silent
         return not non_silent_segments
 
-    def process_audio(self, min_silence_len=100, threshold=-30, output_folder='output'):
+    def process_audio(self, min_silence_len=5000, threshold=-30, output_folder='output'):
         try:
             print("Processing audio...")
             non_silent_parts = self.split_audio_by_silence(min_silence_len, threshold)
@@ -77,7 +77,7 @@ def main():
     parser = argparse.ArgumentParser(description="Audio processing script")
     parser.add_argument("input_file", help="Input audio file path")
     parser.add_argument("--output_folder", default="output", help="Output folder path")
-    parser.add_argument("--min_silence_len", type=int, default=100, help="Minimum silence length (in milliseconds)")
+    parser.add_argument("--min_silence_len", type=int, default=5000, help="Minimum silence length (in milliseconds)")
     parser.add_argument("--threshold", type=int, default=-30, help="Silence threshold in dBFS")
 
     args = parser.parse_args()
