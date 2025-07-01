@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Dead Air Detection</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Dead Air Detection</h1>
+        <p class="subtitle">Powered by Audio-DeSilencer</p>
+        
+        <div class="control-panel">
+            <div class="call-selector">
+                <label for="callId">Call ID:</label>
+                <input type="number" id="callId" placeholder="Enter call ID">
+                <button id="loadCall">Load Call</button>
+            </div>
+            
+            <div class="parameters">
+                <h2>Detection Parameters</h2>
+                
+                <div class="parameter-group">
+                    <label for="thresholdSeconds">
+                        Dead Air Threshold: <span id="thresholdValue">3.0</span>s
+                    </label>
+                    <input type="range" id="thresholdSeconds" min="1" max="10" step="0.1" value="3">
+                </div>
+                
+                <div class="parameter-group">
+                    <label for="skipStartSeconds">
+                        Skip Start: <span id="skipStartValue">10</span>s
+                    </label>
+                    <input type="range" id="skipStartSeconds" min="0" max="30" step="1" value="10">
+                </div>
+                
+                <div class="parameter-group">
+                    <label for="skipEndSeconds">
+                        Skip End: <span id="skipEndValue">10</span>s
+                    </label>
+                    <input type="range" id="skipEndSeconds" min="0" max="30" step="1" value="10">
+                </div>
+                
+                <div class="parameter-group">
+                    <label for="minAmplitudeDbfs">
+                        Silence Threshold: <span id="minAmplitudeValue">-30</span> dBFS
+                    </label>
+                    <input type="range" id="minAmplitudeDbfs" min="-50" max="-10" step="1" value="-30">
+                </div>
+                
+                <button id="runAnalysis" class="run-button" disabled>Run Analysis</button>
+            </div>
+        </div>
+        
+        <div class="results-panel">
+            <div class="result-summary" id="resultSummary" style="display: none;">
+                <h3>Analysis Results</h3>
+                <div class="result-item">
+                    <span class="label">Human Evaluation:</span>
+                    <span id="humanGrade" class="value"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Audio Analysis Result:</span>
+                    <span id="aiGrade" class="value evaluation-grade"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Match Status:</span>
+                    <span id="matchStatus" class="value"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Dead Air Gaps Found:</span>
+                    <span id="gapsFound" class="value"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Total Dead Air Duration:</span>
+                    <span id="totalDeadAir" class="value"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Audio Duration:</span>
+                    <span id="audioDuration" class="value"></span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Database Status:</span>
+                    <span id="databaseStatus" class="value"></span>
+                </div>
+            </div>
+            
+            <div class="waveform-container">
+                <h3>Audio Waveform</h3>
+                <div class="audio-controls">
+                    <button id="playPauseBtn" class="control-btn" disabled>
+                        <span id="playPauseIcon">▶️</span> Play
+                    </button>
+                    <button id="stopBtn" class="control-btn" disabled>⏹️ Stop</button>
+                    <span class="time-display">
+                        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                    </span>
+                    <div class="keyboard-shortcuts">
+                        <small>Shortcuts: Space=Play/Pause, ←→=Seek±5s, Esc=Stop</small>
+                    </div>
+                </div>
+                <div class="waveform-wrapper">
+                    <div id="waveform"></div>
+                    <div id="waveformLoading" class="waveform-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading audio waveform...</div>
+                        <div class="loading-progress">
+                            <div class="progress-bar">
+                                <div id="loadingProgressBar" class="progress-fill"></div>
+                            </div>
+                            <span id="loadingProgressText" class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="timeline"></div>
+            </div>
+            
+            <div class="transcription-container">
+                <h3>Transcription</h3>
+                <div id="transcription"></div>
+            </div>
+            
+            <div class="gaps-detail" id="gapsDetail" style="display: none;">
+                <h3>Detected Gaps Detail</h3>
+                <div id="gapsList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- WaveSurfer.js -->
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js" type="module"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js" type="module"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/timeline.esm.js" type="module"></script>
+    <script src="app.js" type="module"></script>
+</body>
+</html>

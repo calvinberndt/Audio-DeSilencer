@@ -28,6 +28,129 @@ class AudioProcessor:
         non_silent_segments = self.split_audio_by_silence(min_silence_len, threshold)
         # If the list of non-silent segments is empty, the audio is fully silent
         return not non_silent_segments
+    
+    def detect_dead_air(self, min_silence_len=3000, threshold=-30, skip_start_ms=10000, skip_end_ms=10000):
+        """
+        Detect dead air gaps in the audio
+        
+        Args:
+            min_silence_len: Minimum duration of silence to be considered dead air (in milliseconds)
+            threshold: Silence threshold in dBFS
+            skip_start_ms: Skip this many milliseconds from the start
+            skip_end_ms: Skip this many milliseconds from the end
+            
+        Returns:
+            Dictionary containing:
+                - gaps: List of gap dictionaries with start/end times and durations
+                - total_gaps: Total number of gaps found
+                - total_dead_air_ms: Total duration of dead air in milliseconds
+                - evaluation_boundaries: Start and end times of evaluation window
+        """
+        # Get audio duration
+        audio_duration_ms = len(self.audio)
+        
+        # Calculate evaluation boundaries
+        eval_start_ms = skip_start_ms
+        eval_end_ms = max(eval_start_ms, audio_duration_ms - skip_end_ms)
+        
+        # Detect non-silent parts
+        non_silent_segments = self.split_audio_by_silence(min_silence_len, threshold)
+        
+        # Find gaps between non-silent segments
+        gaps = []
+        
+        # Add initial gap if audio starts with silence after skip_start
+        if non_silent_segments and non_silent_segments[0][0] > eval_start_ms:
+            gap_start = eval_start_ms
+            gap_end = non_silent_segments[0][0]
+            gap_duration = gap_end - gap_start
+            if gap_duration >= min_silence_len:
+                gaps.append({
+                    'start_ms': gap_start,
+                    'end_ms': gap_end,
+                    'duration_ms': gap_duration,
+                    'start_time': gap_start / 1000.0,
+                    'end_time': gap_end / 1000.0,
+                    'duration': gap_duration / 1000.0
+                })
+        
+        # Find gaps between consecutive non-silent segments
+        for i in range(len(non_silent_segments) - 1):
+            gap_start = non_silent_segments[i][1]
+            gap_end = non_silent_segments[i + 1][0]
+            
+            # Only consider gaps within evaluation boundaries
+            if gap_start >= eval_end_ms:
+                break
+            if gap_end <= eval_start_ms:
+                continue
+                
+            # Clip to evaluation boundaries
+            gap_start = max(gap_start, eval_start_ms)
+            gap_end = min(gap_end, eval_end_ms)
+            
+            gap_duration = gap_end - gap_start
+            if gap_duration >= min_silence_len:
+                gaps.append({
+                    'start_ms': gap_start,
+                    'end_ms': gap_end,
+                    'duration_ms': gap_duration,
+                    'start_time': gap_start / 1000.0,
+                    'end_time': gap_end / 1000.0,
+                    'duration': gap_duration / 1000.0
+                })
+        
+        # Add final gap if audio ends with silence before skip_end
+        if non_silent_segments and non_silent_segments[-1][1] < eval_end_ms:
+            gap_start = non_silent_segments[-1][1]
+            gap_end = eval_end_ms
+            gap_duration = gap_end - gap_start
+            if gap_duration >= min_silence_len:
+                gaps.append({
+                    'start_ms': gap_start,
+                    'end_ms': gap_end,
+                    'duration_ms': gap_duration,
+                    'start_time': gap_start / 1000.0,
+                    'end_time': gap_end / 1000.0,
+                    'duration': gap_duration / 1000.0
+                })
+        
+        # Handle case where entire evaluation window is silent
+        if not non_silent_segments and eval_end_ms > eval_start_ms:
+            gap_duration = eval_end_ms - eval_start_ms
+            if gap_duration >= min_silence_len:
+                gaps.append({
+                    'start_ms': eval_start_ms,
+                    'end_ms': eval_end_ms,
+                    'duration_ms': gap_duration,
+                    'start_time': eval_start_ms / 1000.0,
+                    'end_time': eval_end_ms / 1000.0,
+                    'duration': gap_duration / 1000.0
+                })
+        
+        # Calculate total dead air
+        total_dead_air_ms = sum(gap['duration_ms'] for gap in gaps)
+        
+        return {
+            'gaps': gaps,
+            'total_gaps': len(gaps),
+            'total_dead_air_ms': total_dead_air_ms,
+            'total_dead_air_seconds': total_dead_air_ms / 1000.0,
+            'evaluation_boundaries': {
+                'start_ms': eval_start_ms,
+                'end_ms': eval_end_ms,
+                'start_time': eval_start_ms / 1000.0,
+                'end_time': eval_end_ms / 1000.0
+            },
+            'audio_duration_ms': audio_duration_ms,
+            'audio_duration_seconds': audio_duration_ms / 1000.0,
+            'parameters': {
+                'min_silence_len_ms': min_silence_len,
+                'threshold_dbfs': threshold,
+                'skip_start_ms': skip_start_ms,
+                'skip_end_ms': skip_end_ms
+            }
+        }
 
     def process_audio(self, min_silence_len=5000, threshold=-30, output_folder='output'):
         try:
